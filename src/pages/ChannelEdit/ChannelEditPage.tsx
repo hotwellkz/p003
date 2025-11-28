@@ -36,6 +36,19 @@ const TONES = [
   "Профессиональное"
 ];
 
+// Валидация URL
+const isValidUrl = (url: string | null | undefined): boolean => {
+  if (!url || url.trim() === "") {
+    return true; // Пустые значения разрешены
+  }
+  try {
+    const urlObj = new URL(url);
+    return urlObj.protocol === "http:" || urlObj.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 const ChannelEditPage = () => {
   const { channelId } = useParams<{ channelId: string }>();
   const navigate = useNavigate();
@@ -52,6 +65,11 @@ const ChannelEditPage = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [channel, setChannel] = useState<Channel | null>(null);
+  const [urlErrors, setUrlErrors] = useState<{
+    youtube?: string;
+    tiktok?: string;
+    instagram?: string;
+  }>({});
 
   useEffect(() => {
     if (!user?.uid || !channelId) {
@@ -88,12 +106,36 @@ const ChannelEditPage = () => {
         // Убеждаемся, что generationMode установлен (для старых каналов)
         setChannel({
           ...found,
-          generationMode: found.generationMode || "script"
+          generationMode: found.generationMode || "script",
+          youtubeUrl: found.youtubeUrl || null,
+          tiktokUrl: found.tiktokUrl || null,
+          instagramUrl: found.instagramUrl || null
         });
         setLoading(false);
       }
     }
   }, [channels, channelId]);
+
+  const validateUrls = (): boolean => {
+    const errors: {
+      youtube?: string;
+      tiktok?: string;
+      instagram?: string;
+    } = {};
+
+    if (!isValidUrl(channel?.youtubeUrl)) {
+      errors.youtube = "Введите корректный URL (должен начинаться с http:// или https://)";
+    }
+    if (!isValidUrl(channel?.tiktokUrl)) {
+      errors.tiktok = "Введите корректный URL (должен начинаться с http:// или https://)";
+    }
+    if (!isValidUrl(channel?.instagramUrl)) {
+      errors.instagram = "Введите корректный URL (должен начинаться с http:// или https://)";
+    }
+
+    setUrlErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -103,6 +145,11 @@ const ChannelEditPage = () => {
 
     if (!channel.name.trim()) {
       setError("Название канала обязательно");
+      return;
+    }
+
+    if (!validateUrls()) {
+      setError("Проверьте корректность введённых URL");
       return;
     }
 
@@ -394,6 +441,128 @@ const ChannelEditPage = () => {
                     Сценарий + VIDEO_PROMPT для Sora/Veo
                   </div>
                 </button>
+              </div>
+            </div>
+
+            <div className="border-t border-white/10 pt-6">
+              <h3 className="mb-4 text-lg font-semibold text-white">
+                Ссылки на соцсети
+              </h3>
+              <p className="mb-4 text-sm text-slate-400">
+                Укажите ссылки на ваши аккаунты в социальных сетях (опционально)
+              </p>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-slate-200">
+                    YouTube канал (опционально)
+                  </label>
+                  <input
+                    type="url"
+                    value={channel.youtubeUrl || ""}
+                    onChange={(e) => {
+                      const value = e.target.value.trim() || null;
+                      setChannel({ ...channel, youtubeUrl: value });
+                      // Очищаем ошибку при изменении
+                      if (urlErrors.youtube) {
+                        setUrlErrors({ ...urlErrors, youtube: undefined });
+                      }
+                    }}
+                    onBlur={() => {
+                      if (channel.youtubeUrl && !isValidUrl(channel.youtubeUrl)) {
+                        setUrlErrors({
+                          ...urlErrors,
+                          youtube:
+                            "Введите корректный URL (должен начинаться с http:// или https://)"
+                        });
+                      }
+                    }}
+                    placeholder="https://www.youtube.com/@example"
+                    className={`w-full rounded-xl border px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:ring-2 focus:ring-brand/40 ${
+                      urlErrors.youtube
+                        ? "border-red-500/50 bg-red-950/20 focus:border-red-500"
+                        : "border-white/10 bg-slate-950/60 focus:border-brand"
+                    }`}
+                  />
+                  {urlErrors.youtube && (
+                    <p className="text-xs text-red-400">{urlErrors.youtube}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-slate-200">
+                    TikTok канал (опционально)
+                  </label>
+                  <input
+                    type="url"
+                    value={channel.tiktokUrl || ""}
+                    onChange={(e) => {
+                      const value = e.target.value.trim() || null;
+                      setChannel({ ...channel, tiktokUrl: value });
+                      // Очищаем ошибку при изменении
+                      if (urlErrors.tiktok) {
+                        setUrlErrors({ ...urlErrors, tiktok: undefined });
+                      }
+                    }}
+                    onBlur={() => {
+                      if (channel.tiktokUrl && !isValidUrl(channel.tiktokUrl)) {
+                        setUrlErrors({
+                          ...urlErrors,
+                          tiktok:
+                            "Введите корректный URL (должен начинаться с http:// или https://)"
+                        });
+                      }
+                    }}
+                    placeholder="https://www.tiktok.com/@example"
+                    className={`w-full rounded-xl border px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:ring-2 focus:ring-brand/40 ${
+                      urlErrors.tiktok
+                        ? "border-red-500/50 bg-red-950/20 focus:border-red-500"
+                        : "border-white/10 bg-slate-950/60 focus:border-brand"
+                    }`}
+                  />
+                  {urlErrors.tiktok && (
+                    <p className="text-xs text-red-400">{urlErrors.tiktok}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-slate-200">
+                    Instagram (опционально)
+                  </label>
+                  <input
+                    type="url"
+                    value={channel.instagramUrl || ""}
+                    onChange={(e) => {
+                      const value = e.target.value.trim() || null;
+                      setChannel({ ...channel, instagramUrl: value });
+                      // Очищаем ошибку при изменении
+                      if (urlErrors.instagram) {
+                        setUrlErrors({ ...urlErrors, instagram: undefined });
+                      }
+                    }}
+                    onBlur={() => {
+                      if (
+                        channel.instagramUrl &&
+                        !isValidUrl(channel.instagramUrl)
+                      ) {
+                        setUrlErrors({
+                          ...urlErrors,
+                          instagram:
+                            "Введите корректный URL (должен начинаться с http:// или https://)"
+                        });
+                      }
+                    }}
+                    placeholder="https://www.instagram.com/example"
+                    className={`w-full rounded-xl border px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:ring-2 focus:ring-brand/40 ${
+                      urlErrors.instagram
+                        ? "border-red-500/50 bg-red-950/20 focus:border-red-500"
+                        : "border-white/10 bg-slate-950/60 focus:border-brand"
+                    }`}
+                  />
+                  {urlErrors.instagram && (
+                    <p className="text-xs text-red-400">{urlErrors.instagram}</p>
+                  )}
+                </div>
               </div>
             </div>
 

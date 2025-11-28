@@ -73,7 +73,10 @@ const ChannelWizardPage = () => {
       tone: empty.tone,
       blockedTopics: empty.blockedTopics,
       extraNotes: empty.extraNotes,
-      generationMode: empty.generationMode || "script"
+      generationMode: empty.generationMode || "script",
+      youtubeUrl: empty.youtubeUrl || null,
+      tiktokUrl: empty.tiktokUrl || null,
+      instagramUrl: empty.instagramUrl || null
     };
   });
 

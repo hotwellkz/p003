@@ -30,18 +30,70 @@ const ChannelCard = ({
   onGenerate,
   onAutoGenerate
 }: ChannelCardProps) => {
+  const handleSocialClick = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    url: string
+  ) => {
+    e.stopPropagation();
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const hasSocialLinks =
+    channel.youtubeUrl || channel.tiktokUrl || channel.instagramUrl;
+
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6 text-white shadow-lg shadow-brand/5 transition hover:border-brand/30 hover:shadow-brand/20">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex-1">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
             {platformLabels[channel.platform]}
           </p>
           <h3 className="mt-1 text-2xl font-semibold">{channel.name}</h3>
         </div>
-        <span className="rounded-full border border-white/20 px-4 py-1 text-sm text-slate-200">
-          {channel.tone || "Без тона"}
-        </span>
+        <div className="flex items-center gap-2">
+          {hasSocialLinks && (
+            <div className="flex items-center gap-1.5">
+              {channel.youtubeUrl && (
+                <button
+                  type="button"
+                  onClick={(e) => handleSocialClick(e, channel.youtubeUrl!)}
+                  className="group flex h-8 w-8 items-center justify-center rounded-full bg-red-600/20 text-red-400 transition hover:bg-red-600/30 hover:scale-110"
+                  title="Открыть YouTube канал"
+                  aria-label="Открыть YouTube канал"
+                >
+                  <span className="text-xs font-bold">YT</span>
+                </button>
+              )}
+              {channel.tiktokUrl && (
+                <button
+                  type="button"
+                  onClick={(e) => handleSocialClick(e, channel.tiktokUrl!)}
+                  className="group flex h-8 w-8 items-center justify-center rounded-full bg-black text-white transition hover:scale-110"
+                  title="Открыть TikTok канал"
+                  aria-label="Открыть TikTok канал"
+                >
+                  <span className="text-xs font-bold">TT</span>
+                </button>
+              )}
+              {channel.instagramUrl && (
+                <button
+                  type="button"
+                  onClick={(e) =>
+                    handleSocialClick(e, channel.instagramUrl!)
+                  }
+                  className="group flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 text-white transition hover:scale-110"
+                  title="Открыть Instagram"
+                  aria-label="Открыть Instagram"
+                >
+                  <span className="text-xs font-bold">IG</span>
+                </button>
+              )}
+            </div>
+          )}
+          <span className="rounded-full border border-white/20 px-4 py-1 text-sm text-slate-200">
+            {channel.tone || "Без тона"}
+          </span>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 text-sm text-slate-300 md:grid-cols-2">

@@ -26,6 +26,9 @@ export interface Channel {
   blockedTopics: string;
   extraNotes?: string;
   generationMode?: GenerationMode; // По умолчанию "script" для обратной совместимости
+  youtubeUrl?: string | null; // Ссылка на YouTube канал
+  tiktokUrl?: string | null; // Ссылка на TikTok канал
+  instagramUrl?: string | null; // Ссылка на Instagram канал
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -71,6 +74,9 @@ export const createEmptyChannel = (): Channel => {
     blockedTopics: "",
     extraNotes: "",
     generationMode: "script",
+    youtubeUrl: null,
+    tiktokUrl: null,
+    instagramUrl: null,
     createdAt: now,
     updatedAt: now
   };
