@@ -3,6 +3,7 @@ import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
 // Валидация переменных окружения
+// ⚠️ ВАЖНО: Используйте правильное имя VITE_FIREBASE_API_KEY (не VITE_FIREBASE_APY_KEY с опечаткой!)
 const requiredEnvVars = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -11,6 +12,19 @@ const requiredEnvVars = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
+
+// Проверка на опечатку в имени переменной (если кто-то случайно использовал VITE_FIREBASE_APY_KEY)
+if (import.meta.env.VITE_FIREBASE_APY_KEY) {
+  console.error(
+    "❌ ОШИБКА: Обнаружена переменная VITE_FIREBASE_APY_KEY (с опечаткой)!"
+  );
+  console.error(
+    "💡 Используйте правильное имя: VITE_FIREBASE_API_KEY (не APY_KEY, а API_KEY)"
+  );
+  console.error(
+    "💡 В Netlify удалите VITE_FIREBASE_APY_KEY и добавьте VITE_FIREBASE_API_KEY"
+  );
+}
 
 // Проверка наличия всех обязательных переменных
 const missingVars = Object.entries(requiredEnvVars)
@@ -26,6 +40,8 @@ if (missingVars.length > 0) {
     "💡 Убедитесь, что файл .env существует и содержит все необходимые переменные."
   );
   console.error("💡 После изменения .env перезапустите dev сервер (npm run dev)");
+  console.error("💡 Для Netlify: добавьте переменные в Site settings → Environment variables");
+  console.error("💡 См. NETLIFY_ENV_VARS.md для списка всех необходимых переменных");
 }
 
 const firebaseConfig = {
@@ -62,8 +78,8 @@ if (configErrors.length > 0) {
   console.error("💡 См. инструкции в FIREBASE_SETUP.md");
 }
 
-// Отладочная информация (только в dev режиме)
-if (import.meta.env.DEV) {
+// Отладочная информация (в dev и production для диагностики)
+if (import.meta.env.DEV || !firebaseConfig.apiKey) {
   console.log("🔥 Firebase конфигурация:", {
     projectId: firebaseConfig.projectId,
     authDomain: firebaseConfig.authDomain,
@@ -71,7 +87,9 @@ if (import.meta.env.DEV) {
       ? `${firebaseConfig.apiKey.substring(0, 10)}...`
       : "❌ НЕ НАЙДЕН",
     appId: firebaseConfig.appId ? `${firebaseConfig.appId.substring(0, 20)}...` : "❌ НЕ НАЙДЕН",
-    hasAllConfig: !configErrors.length
+    hasAllConfig: !configErrors.length,
+    envVarName: "VITE_FIREBASE_API_KEY",
+    note: "⚠️ Убедитесь, что в Netlify используется правильное имя переменной (не APY_KEY!)"
   });
 }
 
