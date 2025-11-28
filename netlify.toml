@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Настройки для игнорирования Firebase API ключей в собранном коде
+# Firebase API ключи должны быть доступны в клиентском коде, это нормально
+# Используем переменную окружения для игнорирования паттерна AIza* (Firebase API ключи)
+[build.environment]
+  # Игнорируем паттерн AIza* (Firebase API ключи начинаются с AIza)
+  SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "AIza*"
+
