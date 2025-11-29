@@ -11,6 +11,7 @@ import ChannelListPage from "./pages/ChannelList/ChannelListPage";
 import ChannelWizardPage from "./pages/ChannelWizard/ChannelWizardPage";
 import ChannelEditPage from "./pages/ChannelEdit/ChannelEditPage";
 import ScriptGenerationPage from "./pages/ScriptGeneration/ScriptGenerationPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy/PrivacyPolicy";
 import { useAuthStore } from "./stores/authStore";
 
 const FullscreenLoader = () => (
@@ -48,6 +49,7 @@ const PrivateRoute = ({ children }: { children: ReactNode }) => {
 const AppRouter = () => (
   <Routes>
     <Route path="/auth" element={<AuthPage />} />
+    <Route path="/privacy" element={<PrivacyPolicy />} />
     <Route
       path="/channels"
       element={

@@ -387,15 +387,19 @@ const ChannelEditPage = () => {
               <label className="block text-sm font-medium text-slate-200">
                 Дополнительные пожелания
               </label>
-              <textarea
-                value={channel.extraNotes || ""}
-                onChange={(e) =>
-                  setChannel({ ...channel, extraNotes: e.target.value })
-                }
-                rows={4}
-                className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/40"
-                placeholder="Любые дополнительные требования к сценариям..."
-              />
+            <textarea
+              value={channel.extraNotes || ""}
+              onChange={(e) => {
+                const textarea = e.target;
+                textarea.style.height = "auto";
+                textarea.style.height = `${textarea.scrollHeight}px`;
+
+                setChannel({ ...channel, extraNotes: textarea.value });
+              }}
+              rows={4}
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/40 min-h-[140px] h-auto resize-y overflow-auto"
+              placeholder="Любые дополнительные требования к сценариям... Например: «бабушка и дедушка — казахи», особенности персонажей, сеттинг, стиль съёмки."
+            />
             </div>
 
             <div className="space-y-2">

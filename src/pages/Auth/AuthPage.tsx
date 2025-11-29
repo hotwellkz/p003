@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Loader2, Sparkles, Wand2 } from "lucide-react";
 import clsx from "clsx";
 import { useAuthStore } from "../../stores/authStore";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import type { Location } from "react-router-dom";
 
 type AuthMode = "login" | "signup";
@@ -220,6 +220,16 @@ const AuthPage = () => {
           )}
         </section>
       </div>
+
+      {/* Footer with Privacy Policy link */}
+      <footer className="mx-auto mt-12 max-w-5xl border-t border-white/10 pt-8 text-center">
+        <Link
+          to="/privacy"
+          className="text-sm text-slate-400 underline transition hover:text-slate-200"
+        >
+          Политика конфиденциальности
+        </Link>
+      </footer>
     </div>
   );
 };

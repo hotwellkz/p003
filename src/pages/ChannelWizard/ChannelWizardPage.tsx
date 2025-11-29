@@ -398,7 +398,18 @@ const ChannelWizardPage = () => {
           </div>
         );
 
-      case 10:
+      case 10: {
+        const handleExtraNotesChange = (
+          e: React.ChangeEvent<HTMLTextAreaElement>
+        ) => {
+          const textarea = e.target;
+          // Авто-растяжение textarea под контент
+          textarea.style.height = "auto";
+          textarea.style.height = `${textarea.scrollHeight}px`;
+
+          setFormData({ ...formData, extraNotes: textarea.value });
+        };
+
         return (
           <div className="space-y-4">
             <label className="block text-sm font-medium text-slate-200">
@@ -406,19 +417,17 @@ const ChannelWizardPage = () => {
             </label>
             <textarea
               value={formData.extraNotes || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, extraNotes: e.target.value })
-              }
-              placeholder="Любые дополнительные требования к сценариям..."
+              onChange={handleExtraNotesChange}
+              placeholder="Любые дополнительные требования к сценариям... Например: «бабушка и дедушка — казахи», особенности персонажей, сеттинг, стиль съёмки."
               rows={5}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/40"
-              autoFocus
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/40 min-h-[140px] h-auto resize-y overflow-auto"
             />
             <p className="text-sm text-slate-400">
-              Любые дополнительные требования или пожелания
+              Этот блок используется как обязательные условия при генерации сценария и VIDEO_PROMPT, поэтому подробно опишите важные детали (национальность, характеры, стиль и т.п.).
             </p>
           </div>
         );
+      }
 
       default:
         return null;
