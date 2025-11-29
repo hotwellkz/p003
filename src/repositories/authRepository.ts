@@ -24,32 +24,52 @@ export interface AuthRepository {
 const getFirebaseErrorMessage = (error: unknown): string => {
   if (error && typeof error === "object" && "code" in error) {
     const code = (error as { code: string }).code;
+    const message = (error as { message?: string }).message || "";
+    
+    // Логируем полную ошибку для отладки
+    console.error("Firebase Auth ошибка:", { code, message, error });
+    
     switch (code) {
       case "auth/invalid-api-key":
-        return "Неверный API ключ Firebase. Проверьте настройки в .env файле.";
+        return "Неверный API ключ Firebase. Проверьте настройки в .env файле или Netlify Environment Variables.";
       case "auth/unauthorized-domain":
-        return "Домен не авторизован. Добавьте домен в Firebase Console → Authentication → Settings → Authorized domains.";
+        return "Домен не авторизован. Добавьте домен в Firebase Console → Authentication → Settings → Authorized domains. Для localhost добавьте 'localhost'.";
       case "auth/operation-not-allowed":
-        return "Email/Password провайдер не включен. Включите его в Firebase Console → Authentication → Sign-in method.";
+        return "Email/Password провайдер не включен. Включите его в Firebase Console → Authentication → Sign-in method → Email/Password → Enable.";
       case "auth/weak-password":
         return "Пароль слишком слабый. Используйте минимум 6 символов.";
       case "auth/email-already-in-use":
         return "Этот email уже зарегистрирован. Используйте другой email или войдите.";
       case "auth/user-not-found":
-        return "Пользователь с таким email не найден.";
+        return "Пользователь с таким email не найден. Проверьте email или зарегистрируйтесь.";
       case "auth/wrong-password":
-        return "Неверный пароль.";
+        return "Неверный пароль. Проверьте правильность ввода.";
       case "auth/invalid-email":
-        return "Неверный формат email.";
+        return "Неверный формат email. Введите корректный email адрес.";
       case "auth/too-many-requests":
-        return "Слишком много попыток. Попробуйте позже.";
+        return "Слишком много попыток. Попробуйте позже или сбросьте пароль.";
       case "auth/network-request-failed":
         return "Ошибка сети. Проверьте подключение к интернету.";
+      case "auth/invalid-credential":
+        return "Неверный email или пароль. Проверьте правильность ввода.";
+      case "auth/user-disabled":
+        return "Аккаунт заблокирован. Обратитесь в поддержку.";
       default:
-        return `Ошибка авторизации: ${code}. Проверьте настройки Firebase.`;
+        // Пытаемся извлечь более детальную информацию из сообщения
+        if (message) {
+          return `Ошибка авторизации: ${message} (код: ${code})`;
+        }
+        return `Ошибка авторизации: ${code}. Проверьте настройки Firebase. См. FIREBASE_TROUBLESHOOTING.md`;
     }
   }
-  return error instanceof Error ? error.message : "Неизвестная ошибка авторизации";
+  
+  // Если это не Firebase ошибка, но есть сообщение
+  if (error instanceof Error) {
+    console.error("Ошибка авторизации (не Firebase):", error);
+    return error.message;
+  }
+  
+  return "Неизвестная ошибка авторизации. Проверьте консоль браузера для деталей.";
 };
 
 export const authRepository: AuthRepository = {

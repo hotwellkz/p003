@@ -4,30 +4,61 @@ import type { Channel } from "../domain/channel";
 async function callOpenAIProxy(requestBody: Record<string, unknown>): Promise<any> {
   // Определяем URL прокси:
   // - В продакшене: относительный путь к Netlify Function
-  // - В разработке: если используется `netlify dev`, функции доступны на localhost:8888
-  //   Если используется обычный `vite dev`, функции не будут доступны локально
+  // - В разработке: используем продакшен URL, так как локальные функции доступны только с `netlify dev`
+  //   Если нужно тестировать локально, используйте `netlify dev` вместо `npm run dev`
   const isDevelopment = import.meta.env.DEV;
-  const proxyUrl = isDevelopment
-    ? "http://localhost:8888/.netlify/functions/openai-proxy"
-    : "/.netlify/functions/openai-proxy";
-
-  const response = await fetch(proxyUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(requestBody)
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.error?.message ||
-        `OpenAI API ошибка: ${response.status} ${response.statusText}`
-    );
+  
+  // В режиме разработки пытаемся использовать локальный прокси, если доступен
+  // Иначе используем продакшен URL (если есть)
+  let proxyUrl = "/.netlify/functions/openai-proxy";
+  
+  if (isDevelopment) {
+    // Проверяем, есть ли переменная для локального прокси
+    const localProxyUrl = import.meta.env.VITE_NETLIFY_FUNCTIONS_URL;
+    if (localProxyUrl) {
+      proxyUrl = `${localProxyUrl}/.netlify/functions/openai-proxy`;
+    } else {
+      // В режиме разработки без netlify dev используем продакшен URL
+      // Это работает, если сайт уже развернут на Netlify
+      const netlifyUrl = import.meta.env.VITE_NETLIFY_URL;
+      if (netlifyUrl) {
+        proxyUrl = `${netlifyUrl}/.netlify/functions/openai-proxy`;
+      } else {
+        // Если нет продакшен URL, пробуем локальный (может не работать)
+        proxyUrl = "http://localhost:8888/.netlify/functions/openai-proxy";
+      }
+    }
   }
 
-  return await response.json();
+  try {
+    const response = await fetch(proxyUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error?.message ||
+          `OpenAI API ошибка: ${response.status} ${response.statusText}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    // Если ошибка подключения в режиме разработки, даем понятное сообщение
+    if (isDevelopment && error instanceof TypeError && error.message.includes("fetch")) {
+      throw new Error(
+        "Не удалось подключиться к Netlify Function. " +
+        "Для локальной разработки используйте `netlify dev` вместо `npm run dev`, " +
+        "или убедитесь, что сайт развернут на Netlify и переменная VITE_NETLIFY_URL установлена."
+      );
+    }
+    throw error;
+  }
 }
 
 export interface ScriptSection {
