@@ -1,6 +1,6 @@
 import type { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
 
-export const handler: Handler = async (
+const handler: Handler = async (
   event: HandlerEvent,
   context: HandlerContext
 ) => {
@@ -95,4 +95,6 @@ export const handler: Handler = async (
     };
   }
 };
+
+export { handler };
 
