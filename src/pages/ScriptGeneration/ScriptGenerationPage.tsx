@@ -6,7 +6,8 @@ import {
   Loader2,
   RefreshCw,
   Sparkles,
-  Wand2
+  Wand2,
+  Check
 } from "lucide-react";
 import { useAuthStore } from "../../stores/authStore";
 import { useChannelStore } from "../../stores/channelStore";
@@ -36,6 +37,7 @@ const ScriptGenerationPage = () => {
     useState<GenerationResponse | null>(null);
   const [copied, setCopied] = useState(false);
   const [copiedVideoPrompt, setCopiedVideoPrompt] = useState(false);
+  const [copiedFileTitle, setCopiedFileTitle] = useState(false);
 
   useEffect(() => {
     if (!user?.uid || !channelId) {
@@ -177,6 +179,18 @@ ${script.sections.sounds || "—"}`;
       setTimeout(() => setCopiedVideoPrompt(false), 2000);
     } catch (err) {
       setError("Не удалось скопировать промпт в буфер обмена");
+    }
+  };
+
+  const handleCopyFileTitle = async () => {
+    if (!detailedResult?.fileTitle) return;
+
+    try {
+      await navigator.clipboard.writeText(detailedResult.fileTitle);
+      setCopiedFileTitle(true);
+      setTimeout(() => setCopiedFileTitle(false), 2000);
+    } catch (err) {
+      setError("Не удалось скопировать название в буфер обмена");
     }
   };
 
@@ -448,6 +462,40 @@ ${script.sections.sounds || "—"}`;
                       </p>
                     </div>
                   )}
+
+                {/* Блок названия файла (для режима video-prompt-only) */}
+                {detailedResult.fileTitle && (
+                  <div className="mb-4 rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="mb-1 text-xs uppercase tracking-wide text-slate-400">
+                          Название ролика / файла
+                        </div>
+                        <div className="break-all text-sm font-medium text-slate-50">
+                          {detailedResult.fileTitle}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyFileTitle}
+                        disabled={!detailedResult.fileTitle}
+                        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {copiedFileTitle ? (
+                          <>
+                            <Check size={14} />
+                            <span>Скопировано</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={14} />
+                            <span>Копировать</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* VIDEO_PROMPT блок (для режимов "prompt" и "video-prompt-only") */}
                 {detailedResult.videoPrompt && (

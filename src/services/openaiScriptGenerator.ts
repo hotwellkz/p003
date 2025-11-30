@@ -116,9 +116,10 @@ export interface DetailedScenario {
 }
 
 export interface GenerationResponse {
-  mode: "script" | "prompt";
+  mode: "script" | "prompt" | "video-prompt-only";
   scenarios: DetailedScenario[];
   videoPrompt: string | null;
+  fileTitle?: string; // Короткое название ролика для использования как имя файла
   rawText: string;
 }
 
@@ -128,6 +129,39 @@ const PLATFORM_NAMES: Record<Channel["platform"], string> = {
   INSTAGRAM_REELS: "Instagram Reels",
   VK_CLIPS: "VK Клипы"
 };
+
+/**
+ * Очищает название файла от запрещённых символов и нормализует его
+ * @param title - исходное название
+ * @returns безопасное название для использования как имя файла
+ */
+function sanitizeFileName(title: string): string {
+  if (!title || typeof title !== "string") {
+    return `ShortsAI_Video_${Date.now()}`;
+  }
+
+  // Убираем запрещённые символы: \ / : * ? " < > | !
+  let safeTitle = title
+    .replace(/[\\/:*?"<>|!]/g, "") // убираем запрещённые символы
+    .replace(/[^\w\s\-_]/g, "") // убираем все остальные спецсимволы кроме букв, цифр, пробелов, дефисов и подчёркиваний
+    .replace(/\s+/g, " ") // нормализуем пробелы
+    .trim();
+
+  // Если строка стала пустой, используем fallback
+  if (!safeTitle || safeTitle.length === 0) {
+    return `ShortsAI_Video_${Date.now()}`;
+  }
+
+  // Обрезаем до 60 символов
+  if (safeTitle.length > 60) {
+    safeTitle = safeTitle.substring(0, 60).trim();
+  }
+
+  // Убираем точки в конце
+  safeTitle = safeTitle.replace(/\.+$/, "");
+
+  return safeTitle || `ShortsAI_Video_${Date.now()}`;
+}
 
 const LANGUAGE_NAMES: Record<Channel["language"], string> = {
   ru: "русском",
@@ -771,7 +805,7 @@ export async function generateDetailedScripts(
   const model = import.meta.env.VITE_OPENAI_MODEL || "gpt-4o-mini";
   const supportsJsonMode = model.includes("gpt-4") || model.includes("o3");
 
-  // Если режим "video-prompt-only", генерируем только VIDEO_PROMPT без сценариев
+  // Если режим "video-prompt-only", генерируем только VIDEO_PROMPT и fileTitle без сценариев
   if (mode === "video-prompt-only") {
     // Создаем упрощенный сценарий для генерации VIDEO_PROMPT
     const simplifiedScenario = {
@@ -788,38 +822,91 @@ export async function generateDetailedScripts(
     };
 
     const videoPromptText = buildVideoPromptPrompt(channel, [simplifiedScenario]);
+    const languageName = LANGUAGE_NAMES[channel.language];
+
+    // Создаем промпт для генерации VIDEO_PROMPT и fileTitle
+    const systemPrompt = `${videoPromptText}
+
+**ВАЖНО:** Верни ответ строго в JSON-формате с двумя полями:
+1. "videoPrompt" — подробный промпт для генерации ${channel.targetDurationSec}-секундного видео
+2. "fileTitle" — короткое название ролика, которое можно использовать как имя файла
+
+**Требования к fileTitle:**
+- Только буквы, цифры, пробелы, дефисы и подчёркивания
+- Запрещены символы: \\ / : * ? " < > | ! и любые другие знаки пунктуации, кроме дефиса и подчёркивания
+- Без двоеточий и восклицательных знаков
+- Длина не более 60 символов
+- Без точек в конце имени
+- Без эмодзи
+- Название должно передавать суть ролика (например: Babushka_gonitsya_za_medvedem или SipDom_Bystroye_stroitelstvo)
+- На ${languageName} языке
+
+**Формат ответа (строго JSON):**
+{
+  "videoPrompt": "...",
+  "fileTitle": "..."
+}`;
 
     const videoRequestBody: Record<string, unknown> = {
       model,
       messages: [
         {
           role: "system",
-          content: videoPromptText
+          content: systemPrompt
         },
         {
           role: "user",
           content: idea
-            ? `Создай VIDEO_PROMPT для идеи: "${idea}"`
-            : "Создай VIDEO_PROMPT для этого канала."
+            ? `Создай VIDEO_PROMPT и короткое название файла для идеи: "${idea}"`
+            : "Создай VIDEO_PROMPT и короткое название файла для этого канала."
         }
       ],
       temperature: 0.7,
-      max_tokens: 1500
+      max_tokens: 2000
     };
+
+    // Включаем JSON mode если поддерживается
+    if (supportsJsonMode) {
+      videoRequestBody.response_format = { type: "json_object" };
+    }
 
     try {
       const videoData = await callOpenAIProxy(videoRequestBody);
-      const videoPrompt = videoData.choices?.[0]?.message?.content || null;
+      const responseContent = videoData.choices?.[0]?.message?.content || null;
 
-      if (!videoPrompt) {
+      if (!responseContent) {
         throw new Error("Пустой ответ от OpenAI API при генерации VIDEO_PROMPT");
+      }
+
+      // Парсим JSON ответ
+      let parsedResponse: { videoPrompt?: string; fileTitle?: string };
+      try {
+        parsedResponse = JSON.parse(responseContent);
+      } catch (parseError) {
+        // Если не JSON, считаем что это только videoPrompt
+        parsedResponse = { videoPrompt: responseContent };
+      }
+
+      const videoPrompt = parsedResponse.videoPrompt || responseContent;
+      let fileTitle = parsedResponse.fileTitle;
+
+      // Очищаем и нормализуем fileTitle
+      if (fileTitle) {
+        fileTitle = sanitizeFileName(fileTitle);
+      } else {
+        // Генерируем fallback название на основе идеи или канала
+        const fallbackBase = idea
+          ? idea.substring(0, 40).replace(/[^\w\s\-_]/g, "").trim()
+          : `${PLATFORM_NAMES[channel.platform]}_${channel.niche}`.substring(0, 40);
+        fileTitle = sanitizeFileName(fallbackBase || `ShortsAI_Video_${Date.now()}`);
       }
 
       return {
         mode,
         scenarios: [], // Пустой массив сценариев
         videoPrompt,
-        rawText: videoPrompt
+        fileTitle,
+        rawText: responseContent
       };
     } catch (error) {
       if (error instanceof Error) {
