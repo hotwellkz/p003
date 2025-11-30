@@ -771,7 +771,65 @@ export async function generateDetailedScripts(
   const model = import.meta.env.VITE_OPENAI_MODEL || "gpt-4o-mini";
   const supportsJsonMode = model.includes("gpt-4") || model.includes("o3");
 
-  // Генерация сценариев
+  // Если режим "video-prompt-only", генерируем только VIDEO_PROMPT без сценариев
+  if (mode === "video-prompt-only") {
+    // Создаем упрощенный сценарий для генерации VIDEO_PROMPT
+    const simplifiedScenario = {
+      title: idea || "Видео",
+      durationSeconds: channel.targetDurationSec,
+      steps: [
+        {
+          secondFrom: 0,
+          secondTo: channel.targetDurationSec,
+          description: idea || `Короткое вертикальное видео для ${PLATFORM_NAMES[channel.platform]}`,
+          dialog: []
+        }
+      ]
+    };
+
+    const videoPromptText = buildVideoPromptPrompt(channel, [simplifiedScenario]);
+
+    const videoRequestBody: Record<string, unknown> = {
+      model,
+      messages: [
+        {
+          role: "system",
+          content: videoPromptText
+        },
+        {
+          role: "user",
+          content: idea
+            ? `Создай VIDEO_PROMPT для идеи: "${idea}"`
+            : "Создай VIDEO_PROMPT для этого канала."
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1500
+    };
+
+    try {
+      const videoData = await callOpenAIProxy(videoRequestBody);
+      const videoPrompt = videoData.choices?.[0]?.message?.content || null;
+
+      if (!videoPrompt) {
+        throw new Error("Пустой ответ от OpenAI API при генерации VIDEO_PROMPT");
+      }
+
+      return {
+        mode,
+        scenarios: [], // Пустой массив сценариев
+        videoPrompt,
+        rawText: videoPrompt
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("Неизвестная ошибка при генерации VIDEO_PROMPT");
+    }
+  }
+
+  // Генерация сценариев (для режимов "script" и "prompt")
   const scriptPrompt = buildDetailedScriptPrompt(channel, idea);
 
   const scriptRequestBody: Record<string, unknown> = {

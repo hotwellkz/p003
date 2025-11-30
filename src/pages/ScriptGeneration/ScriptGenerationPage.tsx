@@ -86,8 +86,8 @@ const ScriptGenerationPage = () => {
     try {
       const mode = channel.generationMode || "script";
       
-      if (mode === "prompt") {
-        // Используем новую функцию для детальных сценариев
+      if (mode === "prompt" || mode === "video-prompt-only") {
+        // Используем новую функцию для детальных сценариев или только videoPrompt
         const result = await generateDetailedScripts(channel, idea.trim());
         setDetailedResult(result);
       } else {
@@ -287,9 +287,11 @@ ${script.sections.sounds || "—"}`;
           <div className="space-y-6">
             <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-900/60 p-6">
               <h2 className="text-xl font-semibold">
-                {detailedResult
-                  ? "Сгенерированные сценарии"
-                  : "Сгенерированный сценарий"}
+                {detailedResult?.mode === "video-prompt-only"
+                  ? "Промпт для генерации видео"
+                  : detailedResult
+                    ? "Сгенерированные сценарии"
+                    : "Сгенерированный сценарий"}
               </h2>
               <div className="flex gap-3">
                 <button
@@ -385,7 +387,10 @@ ${script.sections.sounds || "—"}`;
             {/* Новый формат (детальные сценарии) */}
             {detailedResult && (
               <div className="space-y-6">
-                {detailedResult.scenarios.map((scenario, scenarioIndex) => (
+                {/* Показываем сценарии только если они есть и режим не video-prompt-only */}
+                {detailedResult.scenarios.length > 0 &&
+                  detailedResult.mode !== "video-prompt-only" &&
+                  detailedResult.scenarios.map((scenario, scenarioIndex) => (
                   <div
                     key={scenarioIndex}
                     className="rounded-xl border border-white/10 bg-slate-900/60 p-6"
@@ -434,7 +439,17 @@ ${script.sections.sounds || "—"}`;
                   </div>
                 ))}
 
-                {/* VIDEO_PROMPT блок (только для режима "prompt") */}
+                {/* Сообщение для режима video-prompt-only, если нет сценариев */}
+                {detailedResult.mode === "video-prompt-only" &&
+                  detailedResult.scenarios.length === 0 && (
+                    <div className="rounded-xl border border-white/10 bg-slate-900/60 p-6 text-center">
+                      <p className="text-slate-400">
+                        В этом режиме сценарий не генерируется, только промпт для видео.
+                      </p>
+                    </div>
+                  )}
+
+                {/* VIDEO_PROMPT блок (для режимов "prompt" и "video-prompt-only") */}
                 {detailedResult.videoPrompt && (
                   <div className="rounded-xl border border-brand/30 bg-brand/5 p-6">
                     <div className="mb-4 flex items-center justify-between">

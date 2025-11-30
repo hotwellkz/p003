@@ -12,7 +12,7 @@ export type SupportedPlatform =
 
 export type SupportedLanguage = "ru" | "en" | "kk";
 
-export type GenerationMode = "script" | "prompt";
+export type GenerationMode = "script" | "prompt" | "video-prompt-only";
 
 export interface Channel {
   id: string;

@@ -406,7 +406,7 @@ const ChannelEditPage = () => {
               <label className="block text-sm font-medium text-slate-200">
                 Режим генерации *
               </label>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <button
                   type="button"
                   onClick={() =>
@@ -443,6 +443,25 @@ const ChannelEditPage = () => {
                   <div className="font-semibold">Сценарий + промпт для видео</div>
                   <div className="mt-1 text-xs text-slate-400">
                     Сценарий + VIDEO_PROMPT для Sora/Veo
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setChannel({
+                      ...channel,
+                      generationMode: "video-prompt-only"
+                    })
+                  }
+                  className={`rounded-xl border px-4 py-3 text-left transition ${
+                    channel.generationMode === "video-prompt-only"
+                      ? "border-brand bg-brand/10 text-white"
+                      : "border-white/10 bg-slate-950/60 text-slate-300 hover:border-brand/40"
+                  }`}
+                >
+                  <div className="font-semibold">Промпт для видео</div>
+                  <div className="mt-1 text-xs text-slate-400">
+                    Только VIDEO_PROMPT для Sora/Veo без текста сценария
                   </div>
                 </button>
               </div>

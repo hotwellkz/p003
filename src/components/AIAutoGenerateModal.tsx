@@ -57,8 +57,8 @@ const AIAutoGenerateModal = ({
     try {
       const mode = channel.generationMode || "script";
       
-      if (mode === "prompt") {
-        // Используем новую функцию для детальных сценариев
+      if (mode === "prompt" || mode === "video-prompt-only") {
+        // Используем новую функцию для детальных сценариев или только videoPrompt
         const generated = await generateDetailedScripts(channel);
         setDetailedResult(generated);
       } else {
@@ -264,10 +264,12 @@ const AIAutoGenerateModal = ({
           {/* Новый формат (детальные сценарии) */}
           {detailedResult && !loading && (
             <div className="space-y-6">
-              {/* Scripts Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Сценарии:</h3>
-                {detailedResult.scenarios.map((scenario, scenarioIndex) => {
+              {/* Scripts Section - показываем только если есть сценарии и режим не video-prompt-only */}
+              {detailedResult.scenarios.length > 0 &&
+                detailedResult.mode !== "video-prompt-only" && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-white">Сценарии:</h3>
+                    {detailedResult.scenarios.map((scenario, scenarioIndex) => {
                   const scenarioText = `${scenario.title} (${scenario.durationSeconds} сек):\n\n${scenario.steps
                     .map(
                       (step) =>
@@ -345,10 +347,21 @@ const AIAutoGenerateModal = ({
                       </div>
                     </div>
                   );
-                })}
-              </div>
+                    })}
+                  </div>
+                )}
 
-              {/* VIDEO_PROMPT блок (только для режима "prompt") */}
+              {/* Сообщение для режима video-prompt-only, если нет сценариев */}
+              {detailedResult.mode === "video-prompt-only" &&
+                detailedResult.scenarios.length === 0 && (
+                  <div className="rounded-xl border border-white/10 bg-slate-900/60 p-6 text-center">
+                    <p className="text-slate-400">
+                      В этом режиме сценарий не генерируется, только промпт для видео.
+                    </p>
+                  </div>
+                )}
+
+              {/* VIDEO_PROMPT блок (для режимов "prompt" и "video-prompt-only") */}
               {detailedResult.videoPrompt && (
                 <div className="rounded-xl border border-brand/30 bg-brand/5 p-6">
                   <div className="mb-4 flex items-center justify-between">
